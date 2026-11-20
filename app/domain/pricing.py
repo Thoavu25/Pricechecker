@@ -18,3 +18,5 @@ class RelativePriceLabelStrategy:
         if ratio <= Decimal("1.20"):
             return "Expensive"
         return "Very expensive"
+
+#weekend

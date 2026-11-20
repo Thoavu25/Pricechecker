@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7f4">
+  <title>Nearwise | Price Checker</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172620;
+      --muted: #64736c;
+      --line: #dce5df;
+      --paper: #fff;
+      --canvas: #f5f7f4;
+      --green: #17684a;
+      --green-dark: #10513a;
+      --lime: #d8f278;
+      --red: #a13838;
+      --shadow: 0 16px 42px rgba(27, 55, 42, .08);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--canvas);
+      color: var(--ink);
+      font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .topbar {
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: .8rem max(1.25rem, calc((100vw - 1120px) / 2));
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,.86);
+    }
+    .brand { display: flex; align-items: center; gap: .75rem; font-weight: 800; letter-spacing: -.03em; }
+    .brand-mark {
+      width: 36px; height: 36px; display: grid; place-items: center;
+      border-radius: 12px; color: var(--green-dark); background: var(--lime); font-size: 19px;
+    }
+    .brand-name { font-size: 1.15rem; }
+    .brand-note { margin-left: .3rem; color: var(--muted); font-size: .75rem; font-weight: 600; letter-spacing: 0; }
+    .top-actions { display: flex; align-items: center; gap: .75rem; }
+    .api-link { color: var(--green); font-size: .9rem; font-weight: 700; text-decoration: none; }
+    .page { width: min(1120px, calc(100% - 2rem)); margin: 2rem auto 4rem; }
+    .hero {
+      overflow: hidden;
+      position: relative;
+      padding: clamp(1.5rem, 5vw, 3.5rem);
+      border-radius: 26px;
+      color: #fff;
+      background: var(--green-dark);
+      box-shadow: var(--shadow);
+    }
+    .hero:after {
+      content: ""; position: absolute; width: 300px; height: 300px; right: 6%; top: -48%;
+      border: 1px solid rgba(216,242,120,.32); border-radius: 50%;
+      box-shadow: 0 0 0 42px rgba(216,242,120,.05), 0 0 0 84px rgba(216,242,120,.04);
+    }
+    .eyebrow { color: var(--lime); text-transform: uppercase; letter-spacing: .14em; font-weight: 800; font-size: .72rem; }
+    h1 { max-width: 700px; margin: .55rem 0 .7rem; font-size: clamp(2rem, 6vw, 3.5rem); line-height: 1.06; letter-spacing: -.055em; }
+    .hero p { max-width: 600px; margin: 0; color: #d5e6db; font-size: 1.03rem; }
+    .hero-note { display: inline-flex; gap: .45rem; align-items: center; margin-top: 1.25rem; padding: .42rem .7rem; border: 1px solid rgba(255,255,255,.2); border-radius: 999px; color: #e7f2eb; font-size: .8rem; }
+    .columns { display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 1.25rem; margin-top: 1.25rem; align-items: start; }
+    .card { padding: clamp(1.1rem, 3vw, 1.6rem); border: 1px solid var(--line); border-radius: 18px; background: var(--paper); box-shadow: 0 8px 26px rgba(27,55,42,.035); }
+    .card + .card { margin-top: 1rem; }
+    .section-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1.15rem; }
+    h2 { margin: 0; font-size: 1.25rem; letter-spacing: -.03em; }
+    h3 { margin: 0 0 .65rem; font-size: 1rem; }
+    .subheading { margin: .2rem 0 0; color: var(--muted); font-size: .9rem; }
+    .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9rem; }
+    .field-grid.one { grid-template-columns: 1fr; }
+    label { display: grid; gap: .35rem; color: #33463c; font-size: .82rem; font-weight: 700; }
+    input, select, textarea {
+      width: 100%; min-width: 0; padding: .72rem .8rem;
+      border: 1px solid #d5dfd8; border-radius: 10px; outline: none;
+      color: var(--ink); background: white;
+    }
+    input:focus, select:focus, textarea:focus { border-color: #3a9970; box-shadow: 0 0 0 3px rgba(58,153,112,.12); }
+    input::placeholder, textarea::placeholder { color: #9aa79f; }
+    textarea { min-height: 145px; resize: vertical; font: 12px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .form-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; margin-top: 1rem; }
+    .button {
+      display: inline-flex; justify-content: center; align-items: center; gap: .45rem;
+      min-height: 42px; padding: .62rem .95rem; border: 1px solid transparent;
+      border-radius: 10px; font-weight: 750; text-decoration: none;
+    }
+    .button.primary { color: white; background: var(--green); }
+    .button.primary:hover { background: var(--green-dark); }
+    .button.secondary { color: var(--green-dark); border-color: var(--line); background: white; }
+    .button.danger { color: var(--red); border-color: #edcece; background: #fff; }
+    .button.small { min-height: 34px; padding: .38rem .62rem; font-size: .8rem; }
+    .button:disabled { opacity: .55; cursor: wait; }
+    .separator { display: flex; align-items: center; gap: .7rem; margin: 1.1rem 0; color: #86928b; font-size: .78rem; }
+    .separator:before, .separator:after { content: ""; height: 1px; flex: 1; background: var(--line); }
+    .status { margin: 0 0 1rem; padding: .72rem .85rem; border-radius: 10px; font-size: .9rem; }
+    .status[hidden] { display: none; }
+    .status.info { color: #315643; background: #eef6ee; }
+    .status.error { color: #8d2929; background: #fff0ef; }
+    .status.success { color: #176141; background: #eaf7ed; }
+    .muted { color: var(--muted); }
+    .small-text { font-size: .82rem; }
+    .hint { margin: .55rem 0 0; color: var(--muted); font-size: .78rem; }
+    .badge { display: inline-flex; padding: .22rem .55rem; border-radius: 999px; color: #315643; background: #edf5ed; font-size: .75rem; font-weight: 750; text-transform: capitalize; }
+    .badge.pending { color: #7b5714; background: #fff4d8; }
+    .result-list { display: grid; gap: .65rem; margin-top: 1rem; }
+    .offer {
+      display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .3rem 1rem;
+      align-items: center; padding: .9rem; border: 1px solid var(--line); border-radius: 12px;
+    }
+    .offer-name { font-weight: 800; }
+    .offer-detail { color: var(--muted); font-size: .82rem; }
+    .offer-price { grid-column: 2; grid-row: 1 / span 2; text-align: right; }
+    .offer-price strong { display: block; font-size: 1.15rem; }
+    .offer-price del { color: var(--muted); font-size: .82rem; }
+    .list { display: grid; gap: .65rem; }
+    .list-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .6rem; padding: .75rem 0; border-bottom: 1px solid var(--line); }
+    .list-row:last-child { border-bottom: 0; }
+    .row-title { font-weight: 750; }
+    .row-actions { display: flex; flex-wrap: wrap; gap: .4rem; }
+    .empty { padding: 1rem; border: 1px dashed #cbd8cf; border-radius: 12px; color: var(--muted); text-align: center; font-size: .88rem; }
+    .session-card { display: flex; align-items: center; justify-content: space-between; gap: .8rem; }
+    .session-user { font-weight: 800; }
+    .session-role { color: var(--muted); font-size: .82rem; text-transform: capitalize; }
+    .auth-panel { max-width: 620px; margin: 1.25rem auto 0; }
+    .dashboard { margin-top: 1.25rem; }
+    .dashboard[hidden], [hidden] { display: none !important; }
+    .admin-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1rem; }
+    .admin-grid .wide { grid-column: 1 / -1; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .83rem; }
+    th, td { padding: .65rem .5rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; }
+    code { padding: .1rem .3rem; border-radius: 5px; background: #f0f3f0; }
+    footer { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1.5rem; color: var(--muted); font-size: .78rem; }
+    @media (max-width: 800px) { .columns { grid-template-columns: 1fr; } }
+    @media (max-width: 560px) {
+      .topbar { padding: .7rem 1rem; }
+      .brand-note { display: none; }
+      .page { width: min(100% - 1rem, 1120px); margin-top: .65rem; }
+      .field-grid, .admin-grid { grid-template-columns: 1fr; }
+      .admin-grid .wide { grid-column: auto; }
+      .api-link { font-size: .78rem; }
+      footer { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">↗</span>
+      <span class="brand-name">nearwise<span class="brand-note">PRICE CHECKER</span></span>
+    </div>
+    <div class="top-actions">
+      <a class="api-link" href="/docs" target="_blank" rel="noreferrer">API docs ↗</a>
+      <button id="header-logout" class="button secondary small" type="button" hidden>Log out</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="hero">
+      <div class="eyebrow">One scan. Better choices.</div>
+      <h1>Know what your basket should cost.</h1>
+      <p>Compare current store prices around you, share prices with shoppers, and keep store offers up to date.</p>
+      <span class="hero-note"><span aria-hidden="true">●</span> Prices are provided by participating stores</span>
+    </section>
+
+    <div id="global-status" class="status" role="status" aria-live="polite" hidden></div>
+
+    <section id="auth-panel" class="auth-panel">
+      <div class="columns">
+        <div class="card">
+          <div class="section-heading">
+            <div>
+              <h2>Welcome back</h2>
+              <p class="subheading">Sign in to open your shopper, store, or admin workspace.</p>
+            </div>
+          </div>
+          <form id="login-form">
+            <div class="field-grid one">
+              <label>Username
+                <input name="username" required autocomplete="username">
+              </label>
+              <label>Password
+                <input name="password" type="password" required autocomplete="current-password">
+              </label>
+            </div>
+            <div class="form-actions">
+              <button class="button primary" type="submit">Sign in</button>
+            </div>
+          </form>
+          <div class="separator">NEW TO NEARWISE?</div>
+          <div class="form-actions">
+            <button id="show-shopper-registration" class="button secondary" type="button">Create shopper account</button>
+            <button id="show-store-registration" class="button secondary" type="button">Register a store</button>
+          </div>
+        </div>
+
+        <aside class="card">
+          <h3>For store owners</h3>
+          <p class="muted small-text">In local development, new store accounts are approved automatically. Other environments may require administrator approval.</p>
+          <h3 style="margin-top:1.2rem">For administrators</h3>
+          <p class="muted small-text">Create the first administrator from the project terminal with <code>python -m app.infrastructure.bootstrap_admin</code>.</p>
+          <p class="hint">Your sign-in token is kept in this browser tab and cleared when you log out.</p>
+        </aside>
+      </div>
+
+      <section id="shopper-registration" class="card" style="margin-top:1rem" hidden>
+        <div class="section-heading"><div><h2>Create a shopper account</h2><p class="subheading">Shopper accounts can sign in as soon as they register.</p></div><button class="button secondary small close-registration" type="button">Close</button></div>
+        <form id="shopper-registration-form">
+          <div class="field-grid">
+            <label>Username<input name="username" required minlength="3" maxlength="80" autocomplete="username"></label>
+            <label>Password<input name="password" type="password" required minlength="10" maxlength="128" autocomplete="new-password"></label>
+          </div>
+          <div class="form-actions"><button class="button primary" type="submit">Create account</button></div>
+        </form>
+      </section>
+
+      <section id="store-registration" class="card" style="margin-top:1rem" hidden>
+        <div class="section-heading"><div><h2>Register your store</h2><p class="subheading">Local development accounts are approved automatically; other environments may require administrator approval.</p></div><button class="button secondary small close-registration" type="button">Close</button></div>
+        <form id="store-registration-form">
+          <div class="field-grid">
+            <label>Username<input name="username" required minlength="3" maxlength="80" autocomplete="username"></label>
+            <label>Password<input name="password" type="password" required minlength="10" maxlength="128" autocomplete="new-password"></label>
+            <label>Store name<input name="store_name" required maxlength="120" placeholder="Your store"></label>
+            <label>Latitude<input name="latitude" type="number" required min="-90" max="90" step="any" placeholder="60.4518"></label>
+            <label>Longitude<input name="longitude" type="number" required min="-180" max="180" step="any" placeholder="22.2666"></label>
+          </div>
+          <div class="form-actions"><button class="button primary" type="submit">Create store account</button></div>
+        </form>
+      </section>
+    </section>
+
+    <section id="dashboard" class="dashboard" hidden>
+      <div class="card session-card">
+        <div><div id="session-name" class="session-user"></div><div id="session-role" class="session-role"></div></div>
+        <span id="session-state" class="badge"></span>
+      </div>
+
+      <section id="shopper-dashboard" class="dashboard" hidden>
+        <div class="columns">
+          <div class="card">
+            <div class="section-heading">
+              <div><h2>Find a nearby price</h2><p class="subheading">Enter the scanned barcode and your location to compare store offers.</p></div>
+            </div>
+            <form id="compare-form">
+              <div class="field-grid">
+                <label>Barcode type
+                  <select name="barcode_type"><option>GTIN</option><option>EAN</option><option>UPC</option></select>
+                </label>
+                <label>GTIN / barcode digits
+                  <input name="gtin" required minlength="8" maxlength="14" inputmode="numeric" pattern="[0-9]{8,14}" placeholder="0123456789012">
+                </label>
+                <label>Your observed price
+                  <input name="price" type="number" required min="0.01" step="0.01" placeholder="12.50">
+                </label>
+                <label>Search radius (km)
+                  <input name="nearby_km" type="number" min="0.1" max="100" step="any" value="10">
+                </label>
+                <label>Latitude
+                  <input name="latitude" type="number" required min="-90" max="90" step="any" placeholder="60.4518">
+                </label>
+                <label>Longitude
+                  <input name="longitude" type="number" required min="-180" max="180" step="any" placeholder="22.2666">
+                </label>
+              </div>
+              <p class="hint">Coordinates are used to calculate nearby stores. Allow location access if you want to fill them automatically.</p>
+              <div class="form-actions">
+                <button class="button primary" type="submit">Compare store prices</button>
+                <button id="use-location" class="button secondary" type="button">Use my location</button>
+              </div>
+            </form>
+            <div id="comparison-results" class="result-list" aria-live="polite"></div>
+          </div>
+          <aside class="card">
+            <h3>How price labels work</h3>
+            <p class="muted small-text">Offers are compared with the price you enter. Active store discounts are applied, then results are shown from lowest current price upward.</p>
+            <div class="separator">PRICE SCALE</div>
+            <p class="small-text">Very inexpensive · Inexpensive · Similar price · Expensive · Very expensive</p>
+            <p class="hint">Only approved and unlocked stores with a recent price for this barcode can appear.</p>
+          </aside>
+        </div>
+      </section>
+
+      <section id="store-dashboard" class="dashboard" hidden>
+        <div id="store-pending-note" class="card status info" hidden>Your store account is waiting for admin approval. Price tools will become available after approval.</div>
+        <div id="store-tools" class="columns" hidden>
+          <div>
+            <section class="card">
+              <div class="section-heading"><div><h2>Add one price</h2><p class="subheading">Submit the current price for a product at your store.</p></div></div>
+              <form id="store-price-form">
+                <div class="field-grid">
+                  <label>Barcode type<select name="barcode_type"><option>GTIN</option><option>EAN</option><option>UPC</option></select></label>
+                  <label>GTIN<input name="gtin" required minlength="8" maxlength="14" inputmode="numeric" pattern="[0-9]{8,14}"></label>
+                  <label>Price<input name="price" type="number" min="0.01" step="0.01" required placeholder="12.50"></label>
+                  <label>Price recorded at<input name="timestamp" type="datetime-local" required></label>
+                </div>
+                <div class="form-actions"><button class="button primary" type="submit">Save price</button></div>
+              </form>
+            </section>
+            <section class="card">
+              <div class="section-heading"><div><h2>Upload a batch</h2><p class="subheading">Paste a JSON array with 1 to 1,000 price records.</p></div></div>
+              <form id="store-batch-form">
+                <label>Price records (JSON)
+                  <textarea name="prices" required spellcheck="false">[
+  {
+    "barcode_type": "GTIN",
+    "gtin": "0123456789012",
+    "price": "12.50",
+    "timestamp": "2026-11-19T15:00:00Z"
+  }
+]</textarea>
+                </label>
+                <div class="form-actions"><button class="button primary" type="submit">Upload prices</button></div>
+              </form>
+            </section>
+          </div>
+          <section class="card">
+            <div class="section-heading"><div><h2>Create a discount</h2><p class="subheading">Discounts are shown to authenticated shoppers only.</p></div></div>
+            <form id="store-discount-form">
+              <div class="field-grid one">
+                <label>Barcode type<select name="barcode_type"><option>GTIN</option><option>EAN</option><option>UPC</option></select></label>
+                <label>GTIN<input name="gtin" required minlength="8" maxlength="14" inputmode="numeric" pattern="[0-9]{8,14}"></label>
+                <label>Discount (%)<input name="percentage" type="number" min="0.01" max="100" step="0.01" required placeholder="15"></label>
+                <label>Starts at<input name="starts_at" type="datetime-local" required></label>
+                <label>Ends at (optional)<input name="ends_at" type="datetime-local"></label>
+              </div>
+              <div class="form-actions"><button class="button primary" type="submit">Save discount</button></div>
+            </form>
+          </section>
+        </div>
+      </section>
+
+      <section id="admin-dashboard" class="dashboard" hidden>
+        <div class="card status info">You are signed in as an administrator. Inventory uploads are available to store accounts only. To add prices, sign out and sign in with a store account. If the store is awaiting approval, approve it below first.</div>
+        <div class="admin-grid">
+          <section class="card">
+            <div class="section-heading"><div><h2>Pending stores</h2><p class="subheading">Review new store account requests.</p></div><button id="refresh-pending" class="button secondary small" type="button">Refresh</button></div>
+            <div id="pending-stores" class="list"></div>
+          </section>
+          <section class="card">
+            <div class="section-heading"><div><h2>Store accounts</h2><p class="subheading">Lock, unlock, or remove accounts.</p></div><button id="refresh-stores" class="button secondary small" type="button">Refresh</button></div>
+            <div id="store-list" class="list"></div>
+          </section>
+          <section class="card">
+            <div class="section-heading"><div><h2>Add administrator</h2><p class="subheading">Create an admin account with a unique username.</p></div></div>
+            <form id="admin-create-form">
+              <div class="field-grid one">
+                <label>Username<input name="username" required minlength="3" maxlength="80"></label>
+                <label>Temporary password<input name="password" type="password" required minlength="10" maxlength="128" autocomplete="new-password"></label>
+              </div>
+              <div class="form-actions"><button class="button primary" type="submit">Create admin</button></div>
+            </form>
+          </section>
+          <section class="card">
+            <div class="section-heading"><div><h2>Audit activity</h2><p class="subheading">Recent administrator actions.</p></div><button id="refresh-audit" class="button secondary small" type="button">Refresh</button></div>
+            <div id="audit-list" class="table-wrap"></div>
+          </section>
+        </div>
+      </section>
+    </section>
+
+    <footer><span>Nearwise · Simplified Price Checker</span><span>Demo project · API documentation available at <a class="api-link" href="/docs">/docs</a></span></footer>
+  </main>
+
+  <script>
+    const API = "/api/v1";
+    const state = { token: sessionStorage.getItem("access_token"), role: sessionStorage.getItem("role"), username: sessionStorage.getItem("username") };
+    const $ = (selector) => document.querySelector(selector);
+    const statusBox = $("#global-status");
+
+    function showStatus(message, kind = "info") {
+      statusBox.textContent = message;
+      statusBox.className = `status ${kind}`;
+      statusBox.hidden = !message;
+      if (message) statusBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function formObject(form) {
+      return Object.fromEntries(new FormData(form).entries());
+    }
+
+    function isoTimestamp(value) {
+      return value ? new Date(value).toISOString() : new Date().toISOString();
+    }
+
+    async function request(path, { method = "GET", body, auth = true } = {}) {
+      const headers = {};
+      if (body !== undefined) headers["Content-Type"] = "application/json";
+      if (auth && state.token) headers.Authorization = `Bearer ${state.token}`;
+      let response;
+      try {
+        response = await fetch(`${API}${path}`, {
+          method,
+          headers,
+          body: body === undefined ? undefined : JSON.stringify(body)
+        });
+      } catch {
+        throw new Error("Cannot reach the API. Check that the server is running.");
+      }
+      if (response.status === 204) return null;
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const detail = Array.isArray(data.detail)
+          ? data.detail.map((item) => item.msg).join("; ")
+          : data.detail;
+        throw new Error(detail || `Request failed (${response.status})`);
+      }
+      return data;
+    }
+
+    function setBusy(form, busy) {
+      const button = form.querySelector('button[type="submit"]');
+      if (button) {
+        button.disabled = busy;
+        button.dataset.originalText ||= button.textContent;
+        button.textContent = busy ? "Please wait…" : button.dataset.originalText;
+      }
+    }
+
+    async function handleForm(form, action) {
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        showStatus("");
+        setBusy(form, true);
+        try {
+          await action(formObject(form));
+        } catch (error) {
+          showStatus(error.message, "error");
+        } finally {
+          setBusy(form, false);
+        }
+      });
+    }
+
+    function escapeText(value) {
+      return String(value ?? "");
+    }
+
+    function showRegistration(which) {
+      $("#shopper-registration").hidden = which !== "shopper";
+      $("#store-registration").hidden = which !== "store";
+      (which === "shopper" ? $("#shopper-registration") : $("#store-registration")).scrollIntoView({ behavior: "smooth" });
+    }
+
+    function renderSession() {
+      const loggedIn = Boolean(state.token && state.role);
+      $("#auth-panel").hidden = loggedIn;
+      $("#dashboard").hidden = !loggedIn;
+      $("#header-logout").hidden = !loggedIn;
+      if (!loggedIn) return;
+      $("#session-name").textContent = state.username || "Signed in";
+      $("#session-role").textContent = `${state.role} workspace`;
+      $("#session-state").textContent = "Signed in";
+      $("#shopper-dashboard").hidden = state.role !== "shopper";
+      $("#store-dashboard").hidden = state.role !== "store";
+      $("#admin-dashboard").hidden = state.role !== "admin";
+      if (state.role === "admin") refreshAdmin();
+      if (state.role === "store") loadStoreTools();
+    }
+
+    async function login(username, password) {
+      const result = await request("/auth/login", { method: "POST", auth: false, body: { username, password } });
+      state.token = result.access_token;
+      state.role = result.role;
+      state.username = username;
+      sessionStorage.setItem("access_token", state.token);
+      sessionStorage.setItem("role", state.role);
+      sessionStorage.setItem("username", state.username);
+      showStatus(`Signed in as ${username} (${result.role}).`, "success");
+      renderSession();
+    }
+
+    function logout() {
+      state.token = null;
+      state.role = null;
+      state.username = null;
+      sessionStorage.clear();
+      renderSession();
+      showStatus("You have been signed out.", "info");
+    }
+
+    function renderOffers(offers) {
+      const target = $("#comparison-results");
+      target.replaceChildren();
+      if (!offers.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "No approved stores with a price for this barcode were found within that radius.";
+        target.append(empty);
+        return;
+      }
+      for (const offer of offers) {
+        const card = document.createElement("article");
+        card.className = "offer";
+        const name = document.createElement("div");
+        name.className = "offer-name";
+        name.textContent = offer.store_name;
+        const detail = document.createElement("div");
+        detail.className = "offer-detail";
+        detail.textContent = `${offer.distance_km} km away · ${offer.label} · ${new Date(offer.recorded_at).toLocaleString()}`;
+        const price = document.createElement("div");
+        price.className = "offer-price";
+        const current = document.createElement("strong");
+        current.textContent = `€${Number(offer.current_price).toFixed(2)}`;
+        price.append(current);
+        if (Number(offer.discount_percent) > 0) {
+          const before = document.createElement("del");
+          before.textContent = `€${Number(offer.price).toFixed(2)} · ${Number(offer.discount_percent)}% off`;
+          price.append(before);
+        }
+        card.append(name, detail, price);
+        target.append(card);
+      }
+    }
+
+    function renderAccountList(container, accounts, pending = false) {
+      container.replaceChildren();
+      if (!accounts.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = pending ? "There are no store requests waiting for approval." : "No store accounts yet.";
+        container.append(empty);
+        return;
+      }
+      for (const account of accounts) {
+        const row = document.createElement("div");
+        row.className = "list-row";
+        const details = document.createElement("div");
+        const title = document.createElement("div");
+        title.className = "row-title";
+        title.textContent = account.store_name || account.username;
+        const secondary = document.createElement("div");
+        secondary.className = "muted small-text";
+        secondary.textContent = `${account.username} · ${account.latitude}, ${account.longitude}`;
+        const badge = document.createElement("span");
+        badge.className = `badge ${pending ? "pending" : ""}`;
+        badge.textContent = pending ? "Pending" : (account.locked ? "Locked" : "Active");
+        details.append(title, secondary, badge);
+        row.append(details);
+        const actions = document.createElement("div");
+        actions.className = "row-actions";
+        if (pending) {
+          const approve = document.createElement("button");
+          approve.className = "button primary small";
+          approve.textContent = "Approve";
+          approve.addEventListener("click", () => adminAction(`/admin/stores/${account.id}/approve`, "POST", "Store approved."));
+          actions.append(approve);
+        } else {
+          const toggle = document.createElement("button");
+          toggle.className = "button secondary small";
+          toggle.textContent = account.locked ? "Unlock" : "Lock";
+          toggle.addEventListener("click", () => adminAction(`/admin/stores/${account.id}/${account.locked ? "unlock" : "lock"}`, "POST", `Store ${account.locked ? "unlocked" : "locked"}.`));
+          const remove = document.createElement("button");
+          remove.className = "button danger small";
+          remove.textContent = "Remove";
+          remove.addEventListener("click", () => {
+            if (window.confirm(`Remove store account "${account.username}" and its prices/discounts?`)) {
+              adminAction(`/admin/stores/${account.id}`, "DELETE", "Store removed.");
+            }
+          });
+          actions.append(toggle, remove);
+        }
+        row.append(actions);
+        container.append(row);
+      }
+    }
+
+    async function adminAction(path, method, successMessage) {
+      try {
+        await request(path, { method });
+        showStatus(successMessage, "success");
+        await refreshAdmin();
+      } catch (error) {
+        showStatus(error.message, "error");
+      }
+    }
+
+    async function refreshAdmin() {
+      try {
+        const [pending, stores, audit] = await Promise.all([
+          request("/admin/stores/pending"),
+          request("/admin/stores"),
+          request("/admin/audit-logs")
+        ]);
+        renderAccountList($("#pending-stores"), pending, true);
+        renderAccountList($("#store-list"), stores);
+        renderAudit(audit);
+      } catch (error) {
+        showStatus(error.message, "error");
+      }
+    }
+
+    function renderAudit(entries) {
+      const target = $("#audit-list");
+      target.replaceChildren();
+      if (!entries.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "No audit entries yet.";
+        target.append(empty);
+        return;
+      }
+      const table = document.createElement("table");
+      const head = document.createElement("thead");
+      head.innerHTML = "<tr><th>Time</th><th>Admin ID</th><th>Action</th><th>Details</th></tr>";
+      const body = document.createElement("tbody");
+      for (const entry of entries) {
+        const row = document.createElement("tr");
+        for (const value of [
+          new Date(entry.occurred_at).toLocaleString(),
+          entry.actor_id,
+          entry.action,
+          entry.details || "—"
+        ]) {
+          const cell = document.createElement("td");
+          cell.textContent = escapeText(value);
+          row.append(cell);
+        }
+        body.append(row);
+      }
+      table.append(head, body);
+      target.append(table);
+    }
+
+    async function loadStoreTools() {
+      try {
+        const account = await request("/stores/me");
+        const approved = account.approved && !account.locked;
+        $("#store-pending-note").hidden = approved;
+        $("#store-tools").hidden = !approved;
+        if (!approved) {
+          $("#store-pending-note").textContent = account.locked
+            ? "This store account is locked. Contact an administrator."
+            : "Your store account is waiting for admin approval. Price tools will become available after approval.";
+        }
+      } catch (error) {
+        showStatus(error.message, "error");
+        $("#store-pending-note").hidden = true;
+        $("#store-tools").hidden = true;
+      }
+    }
+
+    $("#show-shopper-registration").addEventListener("click", () => showRegistration("shopper"));
+    $("#show-store-registration").addEventListener("click", () => showRegistration("store"));
+    document.querySelectorAll(".close-registration").forEach((button) => button.addEventListener("click", () => {
+      $("#shopper-registration").hidden = true;
+      $("#store-registration").hidden = true;
+    }));
+    $("#header-logout").addEventListener("click", logout);
+    $("#refresh-pending").addEventListener("click", refreshAdmin);
+    $("#refresh-stores").addEventListener("click", refreshAdmin);
+    $("#refresh-audit").addEventListener("click", refreshAdmin);
+
+    handleForm($("#login-form"), (data) => login(data.username, data.password));
+
+    handleForm($("#shopper-registration-form"), async (data) => {
+      await request("/auth/register/shopper", { method: "POST", auth: false, body: data });
+      $("#shopper-registration-form").reset();
+      await login(data.username, data.password);
+    });
+
+    handleForm($("#store-registration-form"), async (data) => {
+      data.latitude = Number(data.latitude);
+      data.longitude = Number(data.longitude);
+      const registration = await request("/auth/register/store", { method: "POST", auth: false, body: data });
+      $("#store-registration-form").reset();
+      $("#store-registration").hidden = true;
+      if (registration.approved) {
+        await login(data.username, data.password);
+      } else {
+        showStatus("Store account created, but it is awaiting administrator approval before you can sign in.", "info");
+      }
+    });
+
+    handleForm($("#compare-form"), async (data) => {
+      data.price = String(data.price);
+      data.latitude = Number(data.latitude);
+      data.longitude = Number(data.longitude);
+      data.nearby_km = Number(data.nearby_km || 10);
+      data.timestamp = new Date().toISOString();
+      const result = await request("/prices/compare", { method: "POST", body: data });
+      renderOffers(result.offers);
+      showStatus(`${result.offers.length} store offer(s) found within ${result.nearby_km} km.`, "success");
+    });
+
+    $("#use-location").addEventListener("click", () => {
+      if (!navigator.geolocation) {
+        showStatus("This browser does not support location access. Enter coordinates manually.", "error");
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        ({ coords }) => {
+          $("#compare-form [name=latitude]").value = coords.latitude.toFixed(6);
+          $("#compare-form [name=longitude]").value = coords.longitude.toFixed(6);
+          showStatus("Your coordinates were added. Submit the form to compare prices.", "success");
+        },
+        () => showStatus("Location permission was denied or unavailable. Enter coordinates manually.", "error"),
+        { enableHighAccuracy: false, timeout: 10000 }
+      );
+    });
+
+    handleForm($("#store-price-form"), async (data) => {
+      data.price = String(data.price);
+      data.timestamp = isoTimestamp(data.timestamp);
+      await request("/stores/prices", { method: "POST", body: data });
+      $("#store-price-form").reset();
+      showStatus("Price saved.", "success");
+    });
+
+    handleForm($("#store-batch-form"), async (data) => {
+      let prices;
+      try {
+        prices = JSON.parse(data.prices);
+      } catch {
+        throw new Error("Batch data is not valid JSON.");
+      }
+      const result = await request("/stores/prices/batch", { method: "POST", body: { prices } });
+      showStatus(`${result.saved} price record(s) uploaded.`, "success");
+    });
+
+    handleForm($("#store-discount-form"), async (data) => {
+      data.percentage = String(data.percentage);
+      data.starts_at = isoTimestamp(data.starts_at);
+      data.ends_at = data.ends_at ? isoTimestamp(data.ends_at) : null;
+      await request("/stores/discounts", { method: "POST", body: data });
+      $("#store-discount-form").reset();
+      showStatus("Discount saved for authenticated shoppers.", "success");
+    });
+
+    handleForm($("#admin-create-form"), async (data) => {
+      await request("/admin/admins", { method: "POST", body: data });
+      $("#admin-create-form").reset();
+      showStatus("Administrator account created.", "success");
+      await refreshAdmin();
+    });
+
+    renderSession();
+  </script>
+</body>
+</html>
